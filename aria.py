@@ -1,11 +1,37 @@
 import aria2p
-import subprocess
+import socket
+import os
 
-op = subprocess.run(['bash','start.sh'],check=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+from aria2p.downloads import Download
 
-aria2 = aria2p.API(
+# Resolve IP of aria2 by hostname
+host = socket.gethostbyname('aria2-pro')
+
+
+# Instance of Aria2 api
+# This line connects the bot to the aria2 rpc server
+
+aria2: aria2p.API = aria2p.API(
     aria2p.Client(
-        host="http://localhost",
-        secret="12345678"
+        host=f"http://{host}",
+        secret=os.environ.get("RPC_SECRET")
     )
 )
+
+
+def addDownload(link: str) -> None:
+    """Adds download link to aria and starts the download
+
+    Args:
+        link: Download url link
+    """
+    link = link.replace('/mirror', '')
+    link = link.strip()
+    download: Download = aria2.add_magnet(link)
+    while download.is_active:
+        print("downloading")
+    if(download.is_complete):
+        print("Download complete")
+
+
+downloads = aria2.get_downloads()
